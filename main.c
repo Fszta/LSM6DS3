@@ -1,69 +1,54 @@
-
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  ** This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
-  *
-  * COPYRIGHT(c) 2018 STMicroelectronics
-  *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
-  */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
 
 /* USER CODE BEGIN Includes */
+#include "math.h"
 
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
-SPI_HandleTypeDef hspi1;
+SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+#define READ 0x80
+#define LSM6DS3_WAI 0x69
+#define WHO_AM_I 0x0F
+#define CTRL1_XL 0x10
+#define CTRL3_C 0x12
+#define CTRL4_C 0x13
+#define CTRL9_XL 0x18
+#define OUTX_L_XL 0x28
+#define OUTX_H_XL 0x29
+#define OUTY_L_XL 0x2A
+#define OUTY_H_XL 0x2B
+#define OUTZ_L_XL 0x2C
+#define OUTZ_H_XL 0x2D
+#define M_PI   3.14159265358979323846264338327950288
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_SPI1_Init(void);
+static void MX_SPI3_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+void test_device(void); 
 void write_register(uint8_t reg, uint8_t value);
+int read_register(uint8_t register_address); 
+int get_acceleration(uint8_t register_accel_L, uint8_t register_accel_H);
+double compute_angle(int16_t axe_1, int16_t axe_2);
+
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-uint8_t Tx[2], Rx[2], TxB[2], RxB[2];
+uint8_t Tx[2], Rx[2], TxB[2], RxB[2], spiTxBuf[2], spiRxBuf[2], spiTxBuff[2], spiRxBuff[2], TxBuffer[2], RxBuffer[2], TB[2], RB[2];
+int16_t x, y, z, x_accel, y_accel, z_accel;
+double angle1, angle2, angle_rad, angle_deg;
+//uint8_t test_device;
+
 /* USER CODE END 0 */
 
 /**
@@ -72,7 +57,7 @@ uint8_t Tx[2], Rx[2], TxB[2], RxB[2];
   * @retval None
   */
 int main(void)
- {
+{
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -95,7 +80,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_SPI1_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 	uint8_t TxBuf[2], RxBuf[2];
 	RxBuf[0] = 0x00;
@@ -106,60 +91,68 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
-	//TxBuf = 0x00;
-	
+  {	
+		//test_device = read_register(WHO_AM_I);
+		write_register(CTRL1_XL,0x30);
+		
+		x_accel = get_acceleration(OUTX_L_XL,OUTX_H_XL);
+		y_accel = get_acceleration(OUTY_L_XL,OUTY_H_XL);
+		z_accel = get_acceleration(OUTZ_L_XL,OUTZ_H_XL);
+		
+		angle1 = compute_angle(y_accel,z_accel);
+		angle2 = compute_angle(x_accel,z_accel);
+		
+		
+		if (Rx[0] == 0x30)
+		{
+			HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12|GPIO_PIN_13);
+			HAL_Delay(100);
+			
+		}
+		test_device();
+//		TxBuf[0] = WHO_AM_I | READ;
+
+//		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);	
+//		HAL_SPI_Transmit(&hspi3, TxBuf, 1, 50);
+//		HAL_SPI_Receive(&hspi3, RxBuf, 1, 50);
+//		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
+//		
+//		if (RxBuf[0] == LSM6DS3_WAI) 
+//			{
+//				HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14|GPIO_PIN_15);
+//				HAL_Delay(100);
+//			}
+		
 		/* USER CODE END WHILE */
 
-	write_register(0x10,0x30);
-	
-	if (Rx[0] == 0x30)
-	{
-		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12|GPIO_PIN_13);
-		HAL_Delay(100);
-	}
-//	TxBuf[0] = 0x0F | 0x80;
+		/* USER CODE BEGIN 3 */
+		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3,GPIO_PIN_RESET);
+		TxBuf[0] = 0x13;
+		TxBuf[1] = 0x00;
+		
+		HAL_SPI_Transmit(&hspi3,TxBuf,2,50);
 
-//	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);	
-//	HAL_SPI_Transmit(&hspi1, TxBuf, 1, 50);
-//	HAL_SPI_Receive(&hspi1, RxBuf, 1, 50);
-//	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
-//	
-//	if (RxBuf[0] == 0x69U) 
-//		{
-//			HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14|GPIO_PIN_15);
-//			HAL_Delay(100);
-//		}
-//	
-	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3,GPIO_PIN_RESET);
-	TxBuf[0] = 0x12;
-	TxBuf[1] = 0x05;
-	
-	HAL_SPI_Transmit(&hspi1,TxBuf,2,50);
+		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);	
+		TxBuf[0] = (uint8_t) (0x13|0x80);
+		HAL_SPI_Transmit(&hspi3, TxBuf,1,50);
+		HAL_SPI_Receive(&hspi3, RxBuf,1,50);
+		
+		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
+		
+		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3,GPIO_PIN_RESET);
+		TxB[0] = 0x18;
+		TxB[1] = 0x38;
+		
+		HAL_SPI_Transmit(&hspi3,TxB,2,50);
 
-	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);	
-	TxBuf[0] = (uint8_t) (0x12|0x80);
-	HAL_SPI_Transmit(&hspi1, TxBuf,1,50);
-	HAL_SPI_Receive(&hspi1, RxBuf,1,50);
-	
-	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
-	
-	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3,GPIO_PIN_RESET);
-	TxB[0] = 0x18;
-	TxB[1] = 0x38;
-	
-	HAL_SPI_Transmit(&hspi1,TxB,2,50);
-
-	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);	
-	TxB[0] = (uint8_t) (0x18|0x80);
-	HAL_SPI_Transmit(&hspi1, TxB,1,50);
-	HAL_SPI_Receive(&hspi1, RxB,1,50);
-	
-	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
-	
-  /* USER CODE BEGIN 3 */
+		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);	
+		TxB[0] = (uint8_t) (0x18|0x80);
+		HAL_SPI_Transmit(&hspi3, TxB,1,50);
+		HAL_SPI_Receive(&hspi3, RxB,1,50);
+		
+		HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
 
   }
   /* USER CODE END 3 */
@@ -219,24 +212,24 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
-/* SPI1 init function */
-static void MX_SPI1_Init(void)
+/* SPI3 init function */
+static void MX_SPI3_Init(void)
 {
 
-  /* SPI1 parameter configuration*/
-  hspi1.Instance = SPI1;
-  hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi1.Init.CRCPolynomial = 10;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  /* SPI3 parameter configuration*/
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_MASTER;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi3) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -257,8 +250,8 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_3, GPIO_PIN_SET);
@@ -283,6 +276,24 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void test_device(void) 
+{
+	uint8_t TxBuf[2], RxBuf[2];
+	TxBuf[0] = WHO_AM_I | READ;
+
+	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);	
+	HAL_SPI_Transmit(&hspi3, TxBuf, 1, 50);
+	HAL_SPI_Receive(&hspi3, RxBuf, 1, 50);
+	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
+		
+	if (RxBuf[0] == LSM6DS3_WAI) 
+	{
+		HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14|GPIO_PIN_15);
+		HAL_Delay(100);
+	}
+}
+
+/* Write register function */
 void write_register(uint8_t reg, uint8_t value)
 {
 	
@@ -290,18 +301,65 @@ void write_register(uint8_t reg, uint8_t value)
 	Tx[0] = reg;
 	Tx[1] = value;
 	
-	HAL_SPI_Transmit(&hspi1,Tx,2,50);
+	HAL_SPI_Transmit(&hspi3,Tx,2,100);
 
 	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);	
 	Tx[0] = (uint8_t) (0x10|0x80);
-	HAL_SPI_Transmit(&hspi1, Tx,1,50);
-	HAL_SPI_Receive(&hspi1, Rx,1,50);
+	HAL_SPI_Transmit(&hspi3, Tx,1,100);
+	HAL_SPI_Receive(&hspi3, Rx,1,100);
+	
+	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
+}
+
+/* Read register function */
+int read_register(uint8_t register_address)
+{
+	uint8_t val;
+	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_RESET);
+	TxBuffer[0] = (uint8_t) (READ|register_address);
+	HAL_SPI_Transmit(&hspi3,TxBuffer,1,100);
+	HAL_SPI_Receive(&hspi3,RxBuffer,1,100);
+	val = RxBuffer[0];
 	
 	HAL_GPIO_WritePin(GPIOE,GPIO_PIN_3, GPIO_PIN_SET);
 	
-	
+	return val;
 }
+
+
+/* Get linear acceleration value, expressed as a 16-bit word */
+int get_acceleration (uint8_t register_accel_L, uint8_t register_accel_H) 
+{
+	int16_t accel;
+	uint8_t accel_Lsb, accel_Msb;
+	
+	/* Get linear acceleration (LSByte) */
+	accel_Lsb = read_register(register_accel_L);
+	
+	/* Get linear acceleration (MSByte) */
+	accel_Msb = read_register(register_accel_H);
+	
+	accel = (accel_Msb <<8) + accel_Lsb;
+	return accel;
+	
+}	
+
+
+/* Compute angle from acceleration */
+double compute_angle(int16_t axe_1, int16_t axe_2)
+{		
+	
+	
+	/* Compute angle, in radians */
+	angle_rad = atan2(axe_1,axe_2);
+	
+	/* Convert radians in degrees */
+	angle_deg = angle_rad * 180.0 / M_PI;
+	
+	return angle_deg;
+}
+
 /* USER CODE END 4 */
 
 /**
