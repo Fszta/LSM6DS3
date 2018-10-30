@@ -10,42 +10,8 @@
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi3;
 
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
-#define READ 0x80
-#define LSM6DS3_WAI 0x69
-#define WHO_AM_I 0x0F
-#define CTRL1_XL 0x10
-#define CTRL3_C 0x12
-#define CTRL4_C 0x13
-#define CTRL9_XL 0x18
-#define OUTX_L_XL 0x28
-#define OUTX_H_XL 0x29
-#define OUTY_L_XL 0x2A
-#define OUTY_H_XL 0x2B
-#define OUTZ_L_XL 0x2C
-#define OUTZ_H_XL 0x2D
-#define M_PI   3.14159265358979323846264338327950288
-/* USER CODE END PV */
 
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_SPI3_Init(void);
-
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
-void test_device(void); 
-void write_register(uint8_t reg, uint8_t value);
-int read_register(uint8_t register_address); 
-void configure_register(void);
-int get_acceleration(uint8_t register_accel_L, uint8_t register_accel_H);
-double compute_angle(int16_t axe_1, int16_t axe_2);
-
-/* USER CODE END PFP */
-
-/* USER CODE BEGIN 0 */
-uint8_t TxBuffer[2], RxBuffer[2], test;
+uint8_t TxBuffer[2], RxBuffer[2], init_flag=0;
 int16_t x, y, z, x_accel, y_accel, z_accel;
 double angle1, angle2, angle_rad, angle_deg;
 
@@ -56,19 +22,22 @@ double angle1, angle2, angle_rad, angle_deg;
   *
   * @retval None
   */
-int main(void)
+double *get_angle(void)
 {
   /* MCU Configuration----------------------------------------------------------*/
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-	
-  /* Configure the system clock */
-  SystemClock_Config();
+	if (init_flag == 0)
+	{
+		HAL_Init();
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_SPI3_Init();
-	test += 1;
+		/* Configure the system clock */
+		SystemClock_Config();
+
+		/* Initialize all configured peripherals */
+		MX_GPIO_Init();
+		MX_SPI3_Init();
+		init_flag = 1;
+	}
   /* Infinite loop */
   while (1)
   {	
@@ -77,7 +46,7 @@ int main(void)
 		
 		/* Configure the registers for accelerometer */
 		configure_register();
-	
+				
 		/* Get acceleration for each axes */
 		x_accel = get_acceleration(OUTX_L_XL,OUTX_H_XL);
 		y_accel = get_acceleration(OUTY_L_XL,OUTY_H_XL);
@@ -86,6 +55,7 @@ int main(void)
 		/* Compute angle from acceleration */
 		angle1 = compute_angle(y_accel,z_accel);
 		angle2 = compute_angle(x_accel,z_accel);
+		
   }
 }
 
