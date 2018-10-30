@@ -13,7 +13,7 @@ SPI_HandleTypeDef hspi3;
 
 uint8_t TxBuffer[2], RxBuffer[2], init_flag=0;
 int16_t x, y, z, x_accel, y_accel, z_accel;
-double angle1, angle2, angle_rad, angle_deg;
+double angle1, angle2, angle_rad, angle_deg, angles[2];
 
 /* USER CODE END 0 */
 
@@ -22,12 +22,14 @@ double angle1, angle2, angle_rad, angle_deg;
   *
   * @retval None
   */
-double *get_angle(void)
+extern double *get_angle()
 {
   /* MCU Configuration----------------------------------------------------------*/
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	
+  /* Initialisation when call the function for the first time */
 	if (init_flag == 0)
 	{
+		/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 		HAL_Init();
 
 		/* Configure the system clock */
@@ -38,9 +40,7 @@ double *get_angle(void)
 		MX_SPI3_Init();
 		init_flag = 1;
 	}
-  /* Infinite loop */
-  while (1)
-  {	
+  
 		/* Check the WHO AM I register of the device */
 		test_device();
 		
@@ -56,7 +56,11 @@ double *get_angle(void)
 		angle1 = compute_angle(y_accel,z_accel);
 		angle2 = compute_angle(x_accel,z_accel);
 		
-  }
+		angles[0] = angle1;
+		angles[1] = angle2;
+	
+	/* Return an array containing the angles */
+	return angles;
 }
 
 /**
@@ -242,7 +246,7 @@ void configure_register(void)
 {
 	/* ODR_XL = 56Hz (Low Power), FS_XL = 2G, BW_XL = 400Hz */
 	write_register(CTRL1_XL,0x30);
-	
+	write_register(CTRL3_C, 0x44);
 	write_register(CTRL4_C,0x00);
 
 	/* Accelerometer X,Y,Z axis output enabled, soft-iron disabled */

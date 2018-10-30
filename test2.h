@@ -21,7 +21,7 @@ static void MX_SPI3_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-double *get_angle();
+extern double *get_angle();
 void test_device(void); 
 void write_register(uint8_t reg, uint8_t value);
 int read_register(uint8_t register_address); 
