@@ -18,7 +18,7 @@ Etant donné les besoins de notre application, l'utilisation de l'accéromètre 
   <li>Hautes performances</li>
 </ul>
 Nous utiliserons le mode low power</p>
-<p><img src="datasheet/signal.png" alt="hi" class="inline"/> 
+<p><img src="datasheet/power_consumption.png" alt="hi" class="inline"/> 
 </p>
 
 <h3>Configuration</h3>
