@@ -1,4 +1,4 @@
-# LSM6DS3 - Driver
+# LSM6DS3 Driver - Communication SPI
 
 <h2>Utilisation de l'accéléromètre 3D</h2>
 <h3>Mode de fonctionnement</h3>
@@ -31,7 +31,7 @@ configuration actuelle
 </ul>
 
 <h3>Calcul des angles</h3>
-<p>Chaque accéléromètre nous permet de calculer l'accélération selon les trois axes X,Y et Z. Ces accélérations nous permettent de calculer deux angles comme suit : 
+<p>Chaque accéléromètre nous permet de calculer l'accélération (en g) selon les trois axes X,Y et Z. Avec ces trois accélérations on peut en déduire les angles comme suit:
 <ul>
   <li>
     
@@ -50,4 +50,9 @@ configuration actuelle
   </li>
 </ul>
 Ces deux angles sont en radians il nous suffit de les convertir en degré.
+</p>
+
+<p>
+<h3>Fonctionnement du code</h3>
+Le code développé permet la gestion de deux devices LSM6DS3 en simultané. Les deux devices sont utilisés avec exactement la même configuration pour le moment. Par la suite nous les configurerons de manière plus adaptée à leur application spécifique. Chaque device est identifiable par une variable CS_ID correspondant au chip select.
 </p>
